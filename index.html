@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="/favicon/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <title>Sprite Sheet Cutter</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f1f1f1;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    #imager, #preview__ {
+      display: block;
+      width: 100%;
+      height: 200px;
+      border: 1px solid #ccc;
+      background-color: #f8f8f8;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      overflow-x: scroll;
+    }
+
+    #fileInput {
+      display: block;
+      margin: 0 auto 10px;
+    }
+
+    #rowsInput,
+    #columnsInput {
+      width: 60px;
+      padding: 5px;
+    }
+
+    #preview__{
+      margin-bottom: 10px;
+      margin-top: 10px;
+    }
+
+    #canvas {
+      border: 1px solid black;
+      margin-top: 10px;
+      border-radius: 5px;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-right: 10px;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    /* Responsive styles */
+    @media screen and (max-width: 600px) {
+      .container {
+        max-width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Image Cutter</h1>
+        <div id="imager"></div>
+        <input type="file" id="fileInput">
+        <br>
+        <br>
+        <b>Rows:</b> <input type="number" id="rowsInput" min="1" value="1">
+        <b>Columns:</b> <input type="number" id="columnsInput" min="1" value="1">
+        <p style="margin-top: 10px;text-align: left;"><b>preview:</b></p>
+        <div id="preview__">
+          
+        </div>
+    
+        <button onclick="showPreview()">Preview</button>
+        <button onclick="cutAndDownload()" disabled>Cut & Download</button>
+        <br>
+        <canvas id="canvas" style="display: none;"></canvas>
+      </div>
+
+  <script>
+    var imager = document.getElementById("imager");
+    var input__ = document.getElementById("fileInput");
+    var preview__ = document.getElementById("preview__");
+    var cutDownloadButton = document.querySelector("button[onclick='cutAndDownload()']");
+    var originalImage;
+
+    input__.addEventListener("change", () => {
+      const image = new Image();
+      image.src = URL.createObjectURL(input__.files[0]);
+      imager.innerHTML = "";
+      imager.appendChild(image);
+      originalImage = image;
+
+      // Disable the "Cut & Download" button when a new image is uploaded
+      cutDownloadButton.disabled = true;
+    });
+
+    function showPreview() {
+      const rows = parseInt(document.getElementById('rowsInput').value);
+      const columns = parseInt(document.getElementById('columnsInput').value);
+
+      if (originalImage) {
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = originalImage.width / columns;
+        canvas.height = originalImage.height / rows;
+
+        // Clear the previous preview
+        preview__.innerHTML = "<p>preview:</p>";
+
+        for (let i = 0; i < rows; i++) {
+          for (let j = 0; j < columns; j++) {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            context.drawImage(originalImage, j * canvas.width, i * canvas.height, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+            // Create a new image element for each cut-up sprite
+            const spriteImage = new Image();
+            spriteImage.src = canvas.toDataURL();
+            preview__.appendChild(spriteImage);
+          }
+        }
+
+        // Enable the "Cut & Download" button after showing the preview
+        cutDownloadButton.disabled = false;
+      }
+    }
+
+    function cutAndDownload() {
+      const rows = parseInt(document.getElementById('rowsInput').value);
+      const columns = parseInt(document.getElementById('columnsInput').value);
+
+      if (originalImage) {
+        const image = new Image();
+        image.src = URL.createObjectURL(input__.files[0]);
+
+        image.onload = function () {
+          const canvas = document.getElementById('canvas');
+          const context = canvas.getContext('2d');
+          canvas.width = image.width / columns;
+          canvas.height = image.height / rows;
+
+          // Array to store cut-up sprite images
+          const spriteImages = [];
+
+          for (let i = 0; i < rows; i++) {
+            for (let j = 0; j < columns; j++) {
+              context.clearRect(0, 0, canvas.width, canvas.height);
+
+              context.drawImage(image, j * canvas.width, i * canvas.height, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+              // Create a new image element for each cut-up sprite
+              const spriteImage = new Image();
+              spriteImage.src = canvas.toDataURL();
+              spriteImages.push({
+                name: `sprite_${i}_${j}.png`,
+                data: spriteImage.src.replace(/^data:image\/(png|jpeg);base64,/, ""),
+              });
+            }
+          }
+
+          // Hide the canvas element
+          canvas.style.display = 'none';
+
+          // Create and download the zip folder
+          const zip = new JSZip();
+          spriteImages.forEach((sprite) => {
+            zip.file(sprite.name, sprite.data, { base64: true });
+          });
+
+          zip.generateAsync({ type: "blob" }).then((content) => {
+            const downloadLink = document.createElement("a");
+            downloadLink.href = URL.createObjectURL(content);
+            downloadLink.download = "cut_up_sprites.zip";
+            downloadLink.click();
+          });
+        };
+      }
+    }
+  </script>
+</body>
+</html>
